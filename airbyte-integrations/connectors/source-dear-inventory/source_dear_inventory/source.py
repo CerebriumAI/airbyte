@@ -50,9 +50,7 @@ class DearBase(HttpStream):
 class ProductAvailability(DearBase):
     primary_key = "ID"
 
-    def path(
-            self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
-    ) -> str:
+    def path(self, **kwargs) -> str:
         return "v2/ref/productavailability?Limit=100"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
@@ -63,11 +61,9 @@ class ProductAvailability(DearBase):
 
 
 class Sales(DearBase):
-    primary_key = "ID"
+    primary_key = "SaleID"
 
-    def path(
-            self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
-    ) -> str:
+    def path(self, **kwargs) -> str:
         return "v2/saleList?Limit=100"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
