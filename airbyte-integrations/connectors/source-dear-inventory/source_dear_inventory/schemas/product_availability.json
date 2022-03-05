@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ID": {
+      "type": ["null", "string"]
+    },
+    "SKU": {
+      "type": ["null", "string"]
+    },
+    "Name": {
+      "type": ["null", "string"]
+    },
+    "Barcode": {
+      "type": ["null", "string"]
+    },
+    "Location": {
+      "type": ["null", "string"]
+    },
+    "Bin": {
+      "type": ["null", "string"]
+    },
+    "Batch": {
+      "type": ["null", "string"]
+    },
+    "ExpiryDate": {
+      "type": ["null", "string"]
+    },
+    "OnHand": {
+      "type": ["null", "integer"]
+    },
+    "Allocated": {
+      "type": ["null", "integer"]
+    },
+    "Available": {
+      "type": ["null", "integer"]
+    },
+    "OnOrder": {
+      "type": ["null", "integer"]
+    },
+    "StockOnHand": {
+      "type": ["null", "integer"]
+    }
+  }
+}
