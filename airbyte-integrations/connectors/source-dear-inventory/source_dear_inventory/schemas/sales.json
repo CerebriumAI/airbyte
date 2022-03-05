@@ -1,0 +1,204 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "SaleID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "OrderNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "OrderDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CustomerID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CustomerReference": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceAmount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "PaidAmount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "InvoiceDueDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ShipBy": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BaseCurrency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CustomerCurrency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CreditNoteNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Updated": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "QuoteStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "OrderStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombinedPickingStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombinedPaymentStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombinedTrackingNumbers": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombinedPackingStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombinedShippingStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombinedInvoiceStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CreditNoteStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "FulFilmentStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "SourceChannel": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ExternalID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "OrderLocationID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "RestockStatus": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}

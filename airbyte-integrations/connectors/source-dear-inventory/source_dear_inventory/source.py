@@ -12,8 +12,7 @@ from airbyte_cdk.sources.streams.http import HttpStream
 from airbyte_cdk.sources.streams.http.auth import NoAuth
 
 
-class ProductAvailability(HttpStream):
-    primary_key = "ID"
+class DearBase(HttpStream):
     url_base = "https://inventory.dearsystems.com/ExternalApi/"
 
     def __init__(self, account_id: str, api_key: str, **kwargs):
@@ -21,13 +20,7 @@ class ProductAvailability(HttpStream):
         self.account_id = account_id
         self.api_key = api_key
 
-    def path(
-            self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
-    ) -> str:
-        return "v2/ref/productavailability?Limit=100"
-
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
-
         current_page = response.json()['Page']
         total_items = response.json()['Total']
 
@@ -53,10 +46,34 @@ class ProductAvailability(HttpStream):
 
         return {"api-auth-applicationkey": api_key, "api-auth-accountid": account_id}
 
+
+class ProductAvailability(DearBase):
+    primary_key = "ID"
+
+    def path(
+            self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
+    ) -> str:
+        return "v2/ref/productavailability?Limit=100"
+
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
 
         for record in json_response.get("ProductAvailabilityList", []):
+            yield record
+
+
+class Sales(DearBase):
+    primary_key = "ID"
+
+    def path(
+            self, stream_state: Mapping[str, Any] = None, stream_slice: Mapping[str, Any] = None, next_page_token: Mapping[str, Any] = None
+    ) -> str:
+        return "v2/saleList?Limit=100"
+
+    def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
+        json_response = response.json()
+
+        for record in json_response.get("SaleList", []):
             yield record
 
 
@@ -78,4 +95,5 @@ class SourceDearInventory(AbstractSource):
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
         auth = NoAuth()
 
-        return [ProductAvailability(account_id=config['account_id'], api_key=config['api_key'], auth=auth)]
+        return [ProductAvailability(account_id=config['account_id'], api_key=config['api_key'], auth=auth),
+                Sales(account_id=config['account_id'], api_key=config['api_key'], auth=auth), ]
