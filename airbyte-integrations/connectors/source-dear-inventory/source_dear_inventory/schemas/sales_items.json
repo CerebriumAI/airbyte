@@ -2,13 +2,79 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "ID": {
+    "TaskID": {
       "type": [
         "null",
         "string"
       ]
     },
-    "SaleID": {
+    "CombineAdditionalCharges": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Memo": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceDueDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CurrencyConversionRate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BillingAddressLine1": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BillingAddressLine2": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "LinkedFulfillmentNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Lines": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AdditionalCharges": {
       "type": [
         "null",
         "string"
