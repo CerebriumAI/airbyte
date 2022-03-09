@@ -6,9 +6,10 @@
 from typing import Any, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 import requests
+from airbyte_cdk.models import SyncMode
 from airbyte_cdk.sources import AbstractSource
 from airbyte_cdk.sources.streams import Stream
-from airbyte_cdk.sources.streams.http import HttpStream
+from airbyte_cdk.sources.streams.http import HttpStream, HttpSubStream
 from airbyte_cdk.sources.streams.http.auth import NoAuth
 
 
@@ -47,6 +48,25 @@ class DearBase(HttpStream):
         return {"api-auth-applicationkey": api_key, "api-auth-accountid": account_id}
 
 
+class DearSubStream(HttpSubStream):
+    def next_page_token(self, response: requests.Response):
+        return None
+
+    def stream_slices(
+        self, sync_mode: SyncMode, cursor_field: List[str] = None, stream_state: Mapping[str, Any] = None
+    ) -> Iterable[Optional[Mapping[str, Any]]]:
+        parent_stream_slices = self.parent.stream_slices(
+            sync_mode=SyncMode.full_refresh, cursor_field=cursor_field, stream_state=stream_state
+        )
+        # iterate over all parent stream_slices
+        for stream_slice in parent_stream_slices:
+            parent_records = self.parent.read_records(sync_mode=SyncMode.full_refresh, stream_slice=stream_slice)
+
+            # iterate over all parent records with current stream_slice
+            for record in parent_records:
+                yield {"parent": record, "sub_parent": stream_slice}
+
+
 class ProductAvailability(DearBase):
     primary_key = "ID"
 
@@ -73,6 +93,19 @@ class Sales(DearBase):
             yield record
 
 
+class SalesItems(DearSubStream, DearBase):
+    primary_key = "SaleID"
+
+    def path(self, stream_slice: Mapping[str, Any] = None, **kwargs) -> str:
+        return f"v2/sale/invoice?SaleID={stream_slice['parent']['SaleID']}"
+
+    def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
+        json_response = response.json()
+
+        for record in json_response.get("Invoices", []):
+            yield record
+
+
 class SourceDearInventory(AbstractSource):
 
     def __init__(self):
@@ -91,5 +124,10 @@ class SourceDearInventory(AbstractSource):
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
         auth = NoAuth()
 
-        return [ProductAvailability(account_id=config['account_id'], api_key=config['api_key'], auth=auth),
-                Sales(account_id=config['account_id'], api_key=config['api_key'], auth=auth), ]
+        sales = Sales(account_id=config['account_id'], api_key=config['api_key'], auth=auth)
+
+        return [
+            ProductAvailability(account_id=config['account_id'], api_key=config['api_key'], auth=auth),
+            sales,
+            SalesItems(sales, account_id=config['account_id'], api_key=config['api_key'], auth=auth)
+        ]
