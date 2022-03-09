@@ -16,10 +16,11 @@ from airbyte_cdk.sources.streams.http.auth import NoAuth
 class DearBase(HttpStream):
     url_base = "https://inventory.dearsystems.com/ExternalApi/"
 
-    def __init__(self, account_id: str, api_key: str, **kwargs):
+    def __init__(self, config: Mapping[str, str], **kwargs):
         super().__init__()
-        self.account_id = account_id
-        self.api_key = api_key
+        self.account_id = config['account_id']
+        self.api_key = config['api_key']
+        self.created_since = config['created_since']
 
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
         current_page = response.json()['Page']
@@ -36,7 +37,7 @@ class DearBase(HttpStream):
 
     def request_params(
             self, stream_state: Mapping[str, Any], stream_slice: Mapping[str, any] = None, next_page_token: Mapping[str, Any] = None
-    ) -> MutableMapping[str, Any]:
+    ) -> Optional[Mapping[str, Any]]:
         return next_page_token
 
     def request_headers(
@@ -53,7 +54,7 @@ class DearSubStream(HttpSubStream):
         return None
 
     def stream_slices(
-        self, sync_mode: SyncMode, cursor_field: List[str] = None, stream_state: Mapping[str, Any] = None
+            self, sync_mode: SyncMode, cursor_field: List[str] = None, stream_state: Mapping[str, Any] = None
     ) -> Iterable[Optional[Mapping[str, Any]]]:
         parent_stream_slices = self.parent.stream_slices(
             sync_mode=SyncMode.full_refresh, cursor_field=cursor_field, stream_state=stream_state
@@ -80,11 +81,24 @@ class ProductAvailability(DearBase):
             yield record
 
 
+class Location(DearBase):
+    primary_key = "ID"
+
+    def path(self, **kwargs) -> str:
+        return "v2/ref/location"
+
+    def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
+        json_response = response.json()
+
+        for record in json_response.get("LocationList", []):
+            yield record
+
+
 class Sales(DearBase):
     primary_key = "SaleID"
 
     def path(self, **kwargs) -> str:
-        return "v2/saleList?Limit=100"
+        return "v2/saleList?Limit=100" + f"&createdSince={self.created_since}" if self.created_since else ''
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
@@ -97,7 +111,7 @@ class SalesItems(DearSubStream, DearBase):
     primary_key = "SaleID"
 
     def path(self, stream_slice: Mapping[str, Any] = None, **kwargs) -> str:
-        return f"v2/sale/invoice?SaleID={stream_slice['parent']['SaleID']}"
+        return f"v2/sale?ID={stream_slice['parent']['SaleID']}"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
@@ -124,10 +138,9 @@ class SourceDearInventory(AbstractSource):
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
         auth = NoAuth()
 
-        sales = Sales(account_id=config['account_id'], api_key=config['api_key'], auth=auth)
-
         return [
-            ProductAvailability(account_id=config['account_id'], api_key=config['api_key'], auth=auth),
-            sales,
-            SalesItems(sales, account_id=config['account_id'], api_key=config['api_key'], auth=auth)
+            Location(config=config, auth=auth),
+            ProductAvailability(config=config, auth=auth),
+            Sales(config=config, auth=auth),
+            SalesItems(Sales(config=config, auth=auth), config=config, auth=auth)
         ]

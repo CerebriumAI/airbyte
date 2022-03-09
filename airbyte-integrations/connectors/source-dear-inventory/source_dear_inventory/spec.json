@@ -16,6 +16,11 @@
         "type": "string",
         "description": "Dear API Key",
         "examples": ["123"]
+      },
+      "created_since": {
+        "type": "string",
+        "description": "Sales Created Since Date",
+        "examples": ["2022-03-09T08:00:00.000Z"]
       }
     }
   }
