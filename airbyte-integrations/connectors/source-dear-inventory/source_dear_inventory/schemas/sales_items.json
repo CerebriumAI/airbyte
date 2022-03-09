@@ -67,18 +67,6 @@
         "null",
         "string"
       ]
-    },
-    "Lines": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "AdditionalCharges": {
-      "type": [
-        "null",
-        "string"
-      ]
     }
   }
 }

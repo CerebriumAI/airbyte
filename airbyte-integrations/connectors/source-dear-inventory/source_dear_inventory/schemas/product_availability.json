@@ -53,31 +53,31 @@
     "OnHand": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "Allocated": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "Available": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "OnOrder": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     },
     "StockOnHand": {
       "type": [
         "null",
-        "integer"
+        "number"
       ]
     }
   }
