@@ -107,7 +107,7 @@ class Sale(DearBase):
             yield record
 
 
-class SalesInvoice(DearSubStream, DearBase):
+class SaleInvoice(DearSubStream, DearBase):
     primary_key = "SaleID"
 
     def path(self, stream_slice: Mapping[str, Any] = None, **kwargs) -> str:
@@ -142,5 +142,5 @@ class SourceDearInventory(AbstractSource):
             Location(config=config, auth=auth),
             ProductAvailability(config=config, auth=auth),
             Sale(config=config, auth=auth),
-            SalesInvoice(Sale(config=config, auth=auth), config=config, auth=auth)
+            SaleInvoice(Sale(config=config, auth=auth), config=config, auth=auth)
         ]
