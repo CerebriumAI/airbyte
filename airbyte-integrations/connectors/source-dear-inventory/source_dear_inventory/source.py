@@ -68,13 +68,9 @@ class DearSubStream(HttpSubStream):
             sync_mode=SyncMode.full_refresh, cursor_field=cursor_field, stream_state=stream_state
         )
 
-        print('parent_stream_slices length: ', len(parent_stream_slices))
-
         # iterate over all parent stream_slices
         for stream_slice in parent_stream_slices:
             parent_records = self.parent.read_records(sync_mode=SyncMode.full_refresh, stream_slice=stream_slice)
-
-            print('parent_records length: ', len(parent_records))
 
             # iterate over all parent records with current stream_slice
             for record in parent_records:
