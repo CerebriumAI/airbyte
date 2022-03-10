@@ -12,6 +12,8 @@ from airbyte_cdk.sources.streams import Stream
 from airbyte_cdk.sources.streams.http import HttpStream, HttpSubStream
 from airbyte_cdk.sources.streams.http.auth import NoAuth
 
+ITEMS_PER_PAGE = 500
+
 
 class DearBase(HttpStream):
     url_base = "https://inventory.dearsystems.com/ExternalApi/"
@@ -23,7 +25,10 @@ class DearBase(HttpStream):
         self.created_since = config['created_since']
 
     def backoff_time(self, response: requests.Response) -> Optional[float]:
-        return 60
+        if response.status_code != 200:
+            return 60
+
+        return None
 
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
         current_page = response.json()['Page']
@@ -31,7 +36,7 @@ class DearBase(HttpStream):
 
         next_page = current_page + 1
 
-        total_pages = int(total_items / 100) + 1
+        total_pages = int(total_items / ITEMS_PER_PAGE) + 1
 
         if total_pages == current_page:
             return None
@@ -62,9 +67,14 @@ class DearSubStream(HttpSubStream):
         parent_stream_slices = self.parent.stream_slices(
             sync_mode=SyncMode.full_refresh, cursor_field=cursor_field, stream_state=stream_state
         )
+
+        print('parent_stream_slices length: ', len(parent_stream_slices))
+
         # iterate over all parent stream_slices
         for stream_slice in parent_stream_slices:
             parent_records = self.parent.read_records(sync_mode=SyncMode.full_refresh, stream_slice=stream_slice)
+
+            print('parent_records length: ', len(parent_records))
 
             # iterate over all parent records with current stream_slice
             for record in parent_records:
@@ -75,7 +85,7 @@ class ProductAvailability(DearBase):
     primary_key = "ID"
 
     def path(self, **kwargs) -> str:
-        return "v2/ref/productavailability?Limit=500"
+        return f"v2/ref/productavailability?Limit={ITEMS_PER_PAGE}"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
@@ -101,7 +111,9 @@ class Sale(DearBase):
     primary_key = "SaleID"
 
     def path(self, **kwargs) -> str:
-        return "v2/saleList?Limit=500" + f"&createdSince={self.created_since}" if self.created_since else ''
+        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}" + f"&CreatedSince={self.created_since}" if self.created_since else ''
+        print('Sale Path: ', path)
+        return path
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
