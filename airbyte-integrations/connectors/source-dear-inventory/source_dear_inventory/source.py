@@ -22,6 +22,9 @@ class DearBase(HttpStream):
         self.api_key = config['api_key']
         self.created_since = config['created_since']
 
+    def backoff_time(self, response: requests.Response) -> Optional[float]:
+        return 60
+
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
         current_page = response.json()['Page']
         total_items = response.json()['Total']
