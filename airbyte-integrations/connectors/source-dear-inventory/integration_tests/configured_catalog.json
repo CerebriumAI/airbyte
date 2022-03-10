@@ -13,7 +13,7 @@
     },
     {
       "stream": {
-        "name": "sales",
+        "name": "sale",
         "json_schema": {},
         "supported_sync_modes": [
           "full_refresh"
@@ -24,7 +24,7 @@
     },
     {
       "stream": {
-        "name": "sales_items",
+        "name": "sale_invoice",
         "json_schema": {},
         "supported_sync_modes": [
           "full_refresh"

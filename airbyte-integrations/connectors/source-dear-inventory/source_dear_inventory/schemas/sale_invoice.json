@@ -1,0 +1,155 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "TaskID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CombineAdditionalCharges": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Memo": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InvoiceDueDate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CurrencyConversionRate": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BillingAddressLine1": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "BillingAddressLine2": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "LinkedFulfillmentNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Lines": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "ProductID": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "SKU": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Quantity": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "Price": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "Discount": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "Tax": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Total": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "AverageCost": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "TaxRule": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Account": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "Comment": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -72,7 +72,7 @@ class ProductAvailability(DearBase):
     primary_key = "ID"
 
     def path(self, **kwargs) -> str:
-        return "v2/ref/productavailability?Limit=100"
+        return "v2/ref/productavailability?Limit=500"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
@@ -94,11 +94,11 @@ class Location(DearBase):
             yield record
 
 
-class Sales(DearBase):
+class Sale(DearBase):
     primary_key = "SaleID"
 
     def path(self, **kwargs) -> str:
-        return "v2/saleList?Limit=100" + f"&createdSince={self.created_since}" if self.created_since else ''
+        return "v2/saleList?Limit=500" + f"&createdSince={self.created_since}" if self.created_since else ''
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
@@ -107,11 +107,11 @@ class Sales(DearBase):
             yield record
 
 
-class SalesItems(DearSubStream, DearBase):
+class SalesInvoice(DearSubStream, DearBase):
     primary_key = "SaleID"
 
     def path(self, stream_slice: Mapping[str, Any] = None, **kwargs) -> str:
-        return f"v2/sale?ID={stream_slice['parent']['SaleID']}"
+        return f"v2/sale/invoice?SaleID={stream_slice['parent']['SaleID']}"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
         json_response = response.json()
@@ -141,6 +141,6 @@ class SourceDearInventory(AbstractSource):
         return [
             Location(config=config, auth=auth),
             ProductAvailability(config=config, auth=auth),
-            Sales(config=config, auth=auth),
-            SalesItems(Sales(config=config, auth=auth), config=config, auth=auth)
+            Sale(config=config, auth=auth),
+            SalesInvoice(Sale(config=config, auth=auth), config=config, auth=auth)
         ]
