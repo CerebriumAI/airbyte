@@ -119,16 +119,21 @@ class Sale(DearBase):
 
 
 class SaleInvoice(DearSubStream, DearBase):
+    # Don't throw an error if request fails - sometimes returns 400
+    raise_on_http_errors = False
     primary_key = "SaleID"
 
     def path(self, stream_slice: Mapping[str, Any] = None, **kwargs) -> str:
         return f"v2/sale/invoice?SaleID={stream_slice['parent']['SaleID']}"
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
-        json_response = response.json()
+        if response.status_code != 200:
+            yield {}
+        else:
+            json_response = response.json()
 
-        for record in json_response.get("Invoices", []):
-            yield record
+            for record in json_response.get("Invoices", []):
+                yield record
 
 
 class SourceDearInventory(AbstractSource):
