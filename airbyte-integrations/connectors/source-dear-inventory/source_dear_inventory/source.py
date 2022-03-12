@@ -9,6 +9,7 @@ import requests
 from airbyte_cdk.models import SyncMode
 from airbyte_cdk.sources import AbstractSource
 from airbyte_cdk.sources.streams import Stream
+from airbyte_cdk.sources.streams.core import IncrementalMixin
 from airbyte_cdk.sources.streams.http import HttpStream, HttpSubStream
 from airbyte_cdk.sources.streams.http.auth import NoAuth
 
@@ -22,7 +23,6 @@ class DearBase(HttpStream):
         super().__init__()
         self.account_id = config['account_id']
         self.api_key = config['api_key']
-        self.created_since = config['created_since']
 
     def backoff_time(self, response: requests.Response) -> Optional[float]:
         if response.status_code != 200:
@@ -65,12 +65,12 @@ class DearSubStream(HttpSubStream):
             self, sync_mode: SyncMode, cursor_field: List[str] = None, stream_state: Mapping[str, Any] = None
     ) -> Iterable[Optional[Mapping[str, Any]]]:
         parent_stream_slices = self.parent.stream_slices(
-            sync_mode=SyncMode.full_refresh, cursor_field=cursor_field, stream_state=stream_state
+            sync_mode=SyncMode.incremental, cursor_field=cursor_field, stream_state=stream_state
         )
 
         # iterate over all parent stream_slices
         for stream_slice in parent_stream_slices:
-            parent_records = self.parent.read_records(sync_mode=SyncMode.full_refresh, stream_slice=stream_slice)
+            parent_records = self.parent.read_records(sync_mode=SyncMode.incremental, stream_slice=stream_slice)
 
             # iterate over all parent records with current stream_slice
             for record in parent_records:
@@ -103,11 +103,30 @@ class Location(DearBase):
             yield record
 
 
-class Sale(DearBase):
+class Sale(DearBase, IncrementalMixin):
     primary_key = "SaleID"
+    cursor_field = "Updated"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._cursor_value = "2000-01-01T00:00:00Z"
+
+    @property
+    def state(self) -> Mapping[str, Any]:
+        if self._cursor_value:
+            return {self.cursor_field: self._cursor_value}
+        else:
+            return {self.cursor_field: ""}
+
+    @state.setter
+    def state(self, value: Mapping[str, Any]):
+        self._cursor_value = value[self.cursor_field]
 
     def path(self, **kwargs) -> str:
-        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}" + f"&CreatedSince={self.created_since}" if self.created_since else ''
+
+        updated = f"&UpdatedSince={self.state[self.cursor_field]}" if self.state[self.cursor_field] else ''
+
+        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}" + updated
         print('Sale Path: ', path)
         return path
 
@@ -115,6 +134,13 @@ class Sale(DearBase):
         json_response = response.json()
 
         for record in json_response.get("SaleList", []):
+            yield record
+
+    def read_records(self, *args, **kwargs) -> Iterable[Mapping[str, Any]]:
+        for record in super().read_records(*args, **kwargs):
+            if self._cursor_value:
+                latest_record_date = record[self.cursor_field]
+                self._cursor_value = max(self._cursor_value, latest_record_date)
             yield record
 
 
@@ -154,9 +180,11 @@ class SourceDearInventory(AbstractSource):
     def streams(self, config: Mapping[str, Any]) -> List[Stream]:
         auth = NoAuth()
 
+        sale = Sale(config=config, auth=auth)
+
         return [
             Location(config=config, auth=auth),
             ProductAvailability(config=config, auth=auth),
-            Sale(config=config, auth=auth),
-            SaleInvoice(Sale(config=config, auth=auth), config=config, auth=auth)
+            sale,
+            SaleInvoice(sale, config=config, auth=auth)
         ]
