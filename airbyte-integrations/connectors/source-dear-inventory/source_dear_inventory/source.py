@@ -13,7 +13,7 @@ from airbyte_cdk.sources.streams.core import IncrementalMixin
 from airbyte_cdk.sources.streams.http import HttpStream, HttpSubStream
 from airbyte_cdk.sources.streams.http.auth import NoAuth
 
-ITEMS_PER_PAGE = 500
+ITEMS_PER_PAGE = 1000
 
 
 class DearBase(HttpStream):
@@ -90,6 +90,19 @@ class ProductAvailability(DearBase):
             yield record
 
 
+class Customer(DearBase):
+    primary_key = "ID"
+
+    def path(self, **kwargs) -> str:
+        return f"v2/customer?Limit={ITEMS_PER_PAGE}"
+
+    def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
+        json_response = response.json()
+
+        for record in json_response.get("CustomerList", []):
+            yield record
+
+
 class Location(DearBase):
     primary_key = "ID"
 
@@ -147,7 +160,7 @@ class Sale(DearBase, IncrementalMixin):
 class SaleInvoice(DearSubStream, DearBase):
     # Don't throw an error if request fails - sometimes returns 400
     raise_on_http_errors = False
-    primary_key = "SaleID"
+    primary_key = "TaskID"
 
     def path(self, stream_slice: Mapping[str, Any] = None, **kwargs) -> str:
         return f"v2/sale/invoice?SaleID={stream_slice['parent']['SaleID']}"
@@ -185,6 +198,7 @@ class SourceDearInventory(AbstractSource):
         return [
             Location(config=config, auth=auth),
             ProductAvailability(config=config, auth=auth),
+            Customer(config=config, auth=auth),
             sale,
             SaleInvoice(sale, config=config, auth=auth)
         ]

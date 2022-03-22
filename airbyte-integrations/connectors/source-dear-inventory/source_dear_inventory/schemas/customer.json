@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "PaymentTerm": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Discount": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "TaxRule": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Carrier": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "SalesRepresentative": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Location": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Comments": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AccountReceivable": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "RevenueAccount": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "PriceTier": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "TaxNumber": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AttributeSet": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Tags": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CreditLimit": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "IsOnCreditHold": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "LastModifiedOn": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}
