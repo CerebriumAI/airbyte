@@ -23,11 +23,11 @@ class DearBase(HttpStream):
         super().__init__()
         self.account_id = config['account_id']
         self.api_key = config['api_key']
+        self.is_finished = False
 
     def backoff_time(self, response: requests.Response) -> Optional[float]:
         if response.status_code != 200:
             return 60
-
         return None
 
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
@@ -39,6 +39,7 @@ class DearBase(HttpStream):
         total_pages = int(total_items / ITEMS_PER_PAGE) + 1
 
         if total_pages == current_page:
+            self.is_finished = True
             return None
 
         return {'Page': next_page}
@@ -126,10 +127,10 @@ class Sale(DearBase, IncrementalMixin):
 
     @property
     def state(self) -> Mapping[str, Any]:
-        if self._cursor_value:
-            return {self.cursor_field: self._cursor_value}
+        if self.is_finished:
+            return {self.cursor_field: self.max_cursor_value}
         else:
-            return {self.cursor_field: ""}
+            return {self.cursor_field: self._cursor_value}
 
     @state.setter
     def state(self, value: Mapping[str, Any]):
@@ -137,9 +138,9 @@ class Sale(DearBase, IncrementalMixin):
 
     def path(self, **kwargs) -> str:
 
-        updated = f"&UpdatedSince={self.state[self.cursor_field]}" if self.state[self.cursor_field] else ''
+        # updated = f"&UpdatedSince={self.state[self.cursor_field]}" if self.state[self.cursor_field] else ''
 
-        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}" + updated
+        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}"  # + updated
         print('Sale Path: ', path)
         return path
 
