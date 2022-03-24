@@ -50,7 +50,7 @@ with numbers as (
         from test_normalization.`nested_stream_with_co___long_names_partition`
         cross join numbers
         -- only generate the number of records in the cross join that corresponds
-        -- to the number of items in nested_stream_with_co___long_names_partition.`DATA`
+        -- to the number of items in test_normalization.`nested_stream_with_co___long_names_partition`.`DATA`
         where numbers.generated_number <= json_length(`DATA`)
     )
 select
@@ -74,7 +74,7 @@ and `DATA` is not null
 -- depends_on: __dbt__CTE__nested_stream_with_co_3es_partition_data_ab1
 select
     _airbyte_partition_hashid,
-    cast(currency as char) as currency,
+    cast(currency as char(1024)) as currency,
     _airbyte_ab_id,
     _airbyte_emitted_at,
     

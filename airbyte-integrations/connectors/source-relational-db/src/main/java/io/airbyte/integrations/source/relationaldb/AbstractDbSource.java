@@ -33,6 +33,7 @@ import io.airbyte.protocol.models.ConfiguredAirbyteCatalog;
 import io.airbyte.protocol.models.ConfiguredAirbyteStream;
 import io.airbyte.protocol.models.Field;
 import io.airbyte.protocol.models.JsonSchemaPrimitive;
+import io.airbyte.protocol.models.JsonSchemaType;
 import io.airbyte.protocol.models.SyncMode;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -365,9 +366,8 @@ public abstract class AbstractDbSource<DataType, Database extends AbstractDataba
    *         SELECT-ing the table with privileges. In some cases such SELECT doesn't require (e.g. in
    *         Oracle DB - the schema is the user, you cannot REVOKE a privilege on a table from its
    *         owner).
-   * @throws SQLException
    */
-  public <T> Set<T> getPrivilegesTableForCurrentUser(JdbcDatabase database, String schema) throws SQLException {
+  public <T> Set<T> getPrivilegesTableForCurrentUser(final JdbcDatabase database, final String schema) throws SQLException {
     return Collections.emptySet();
   }
 
@@ -403,7 +403,7 @@ public abstract class AbstractDbSource<DataType, Database extends AbstractDataba
    * @param columnType source data type
    * @return airbyte data type
    */
-  protected abstract JsonSchemaPrimitive getType(DataType columnType);
+  protected abstract JsonSchemaType getType(DataType columnType);
 
   /**
    * Get list of system namespaces(schemas) in order to exclude them from the discover result list.

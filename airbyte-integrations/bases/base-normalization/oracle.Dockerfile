@@ -1,3 +1,4 @@
+# As of today, dbt-oracle doesn't support 1.0.0
 FROM fishtownanalytics/dbt:0.19.1
 
 USER root
@@ -34,6 +35,7 @@ RUN pip install .
 
 WORKDIR /airbyte/normalization_code
 RUN pip install .
+# based of https://github.com/techindicium/dbt-oracle/tree/fa9718809840ee73e6072f483233f5150cc9986c
 RUN pip install dbt-oracle==0.4.3
 
 WORKDIR /airbyte/normalization_code/dbt-template/

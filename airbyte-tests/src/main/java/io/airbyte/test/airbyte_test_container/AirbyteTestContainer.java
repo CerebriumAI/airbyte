@@ -10,6 +10,7 @@ import io.airbyte.api.client.AirbyteApiClient;
 import io.airbyte.api.client.HealthApi;
 import io.airbyte.api.client.invoker.ApiClient;
 import io.airbyte.api.client.invoker.ApiException;
+import io.airbyte.commons.concurrency.WaitingUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -17,13 +18,18 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
@@ -58,22 +64,23 @@ public class AirbyteTestContainer {
    * Starts Airbyte docker-compose configuration. Will block until the server is reachable or it times
    * outs.
    */
+  public void startBlocking() throws IOException, InterruptedException {
+    startAsync();
+    waitForAirbyte();
+  }
+
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public void start() throws IOException, InterruptedException {
+  public void startAsync() throws IOException, InterruptedException {
     final File cleanedDockerComposeFile = prepareDockerComposeFile(dockerComposeFile);
     dockerComposeContainer = new DockerComposeContainer(cleanedDockerComposeFile).withEnv(env);
+    // Only expose logs related to db migrations.
     serviceLogConsumer(dockerComposeContainer, "init");
+    serviceLogConsumer(dockerComposeContainer, "bootloader");
     serviceLogConsumer(dockerComposeContainer, "db");
     serviceLogConsumer(dockerComposeContainer, "seed");
-    serviceLogConsumer(dockerComposeContainer, "scheduler");
     serviceLogConsumer(dockerComposeContainer, "server");
-    serviceLogConsumer(dockerComposeContainer, "webapp");
-    serviceLogConsumer(dockerComposeContainer, "worker");
-    serviceLogConsumer(dockerComposeContainer, "airbyte-temporal");
 
     dockerComposeContainer.start();
-
-    waitForAirbyte();
   }
 
   private static Map<String, String> prepareDockerComposeEnvVariables(final File envFile) throws IOException {
@@ -91,8 +98,8 @@ public class AirbyteTestContainer {
   private static File prepareDockerComposeFile(final File originalDockerComposeFile) throws IOException {
     final File cleanedDockerComposeFile = Files.createTempFile(Path.of("/tmp"), "docker_compose", "acceptance_test").toFile();
 
-    try (final Scanner scanner = new Scanner(originalDockerComposeFile)) {
-      try (final FileWriter fileWriter = new FileWriter(cleanedDockerComposeFile)) {
+    try (final Scanner scanner = new Scanner(originalDockerComposeFile, StandardCharsets.UTF_8)) {
+      try (final FileWriter fileWriter = new FileWriter(cleanedDockerComposeFile, StandardCharsets.UTF_8)) {
         while (scanner.hasNextLine()) {
           final String s = scanner.nextLine();
           if (s.contains("container_name")) {
@@ -115,24 +122,23 @@ public class AirbyteTestContainer {
             .setHost("localhost")
             .setPort(8001)
             .setBasePath("/api"));
-
     final HealthApi healthApi = apiClient.getHealthApi();
 
-    ApiException lastException;
-    int i = 0;
-    while (true) {
+    final AtomicReference<ApiException> lastException = new AtomicReference<>();
+    final AtomicInteger attempt = new AtomicInteger();
+    final Supplier<Boolean> condition = () -> {
       try {
         healthApi.getHealthCheck();
-        break;
+        return true;
       } catch (final ApiException e) {
-        lastException = e;
-        LOGGER.info("airbyte not ready yet. attempt: {}", i);
+        lastException.set(e);
+        LOGGER.info("airbyte not ready yet. attempt: {}", attempt.incrementAndGet());
+        return false;
       }
-      if (i == 20) {
-        throw new IllegalStateException("Airbyte took too long to start. Including last exception.", lastException);
-      }
-      Thread.sleep(5000);
-      i++;
+    };
+
+    if (!WaitingUtils.waitForCondition(Duration.ofSeconds(5), Duration.ofMinutes(2), condition)) {
+      throw new IllegalStateException("Airbyte took too long to start. Including last exception.", lastException.get());
     }
   }
 
@@ -152,7 +158,7 @@ public class AirbyteTestContainer {
   private Consumer<OutputFrame> logConsumer(final String service, final Consumer<String> customConsumer) {
     return c -> {
       if (c != null && c.getBytes() != null) {
-        final String log = new String(c.getBytes());
+        final String log = new String(c.getBytes(), StandardCharsets.UTF_8);
         if (customConsumer != null) {
           customConsumer.accept(log);
         }
@@ -238,8 +244,8 @@ public class AirbyteTestContainer {
       this.env = new HashMap<>();
     }
 
-    public Builder setEnv(final File envFile) throws IOException {
-      this.env.putAll(prepareDockerComposeEnvVariables(envFile));
+    public Builder setEnv(final Properties env) {
+      this.env.putAll(Maps.fromProperties(env));
       return this;
     }
 
