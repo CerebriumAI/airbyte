@@ -4,8 +4,8 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Fullstory Spec",
     "type": "object",
-    "required": ["TODO"],
-    "additionalProperties": false,
+    "required": [],
+    "additionalProperties": true,
     "properties": {
       "TODO: This schema defines the configuration required for the source. This usually involves metadata such as database and/or authentication information.": {
         "type": "string",
