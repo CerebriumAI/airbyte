@@ -36,10 +36,13 @@ class DearBase(HttpStream):
 
         next_page = current_page + 1
 
-        total_pages = int(total_items / ITEMS_PER_PAGE) + 1
+        total_pages = int(total_items / ITEMS_PER_PAGE)
 
         if total_pages == current_page:
+            print('Setting stream is_finished to true')
             self.is_finished = True
+
+        if total_pages + 1 == current_page:
             return None
 
         return {'Page': next_page}
@@ -123,24 +126,21 @@ class Sale(DearBase, IncrementalMixin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._cursor_value = "2000-01-01T00:00:00Z"
+        self._state = {}
 
     @property
-    def state(self) -> Mapping[str, Any]:
-        if self.is_finished:
-            return {self.cursor_field: self.max_cursor_value}
-        else:
-            return {self.cursor_field: self._cursor_value}
+    def state(self):
+        return self._state
 
     @state.setter
-    def state(self, value: Mapping[str, Any]):
-        self._cursor_value = value[self.cursor_field]
+    def state(self, value):
+        self._state[self.cursor_field] = value[self.cursor_field]
 
     def path(self, **kwargs) -> str:
 
-        # updated = f"&UpdatedSince={self.state[self.cursor_field]}" if self.state[self.cursor_field] else ''
+        updated = f"&UpdatedSince={self.state[self.cursor_field]}" if self.state[self.cursor_field] else ''
 
-        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}"  # + updated
+        path = f"v2/saleList?Limit={ITEMS_PER_PAGE}{updated}"
         print('Sale Path: ', path)
         return path
 
@@ -152,9 +152,8 @@ class Sale(DearBase, IncrementalMixin):
 
     def read_records(self, *args, **kwargs) -> Iterable[Mapping[str, Any]]:
         for record in super().read_records(*args, **kwargs):
-            if self._cursor_value:
-                latest_record_date = record[self.cursor_field]
-                self._cursor_value = max(self._cursor_value, latest_record_date)
+            if self.is_finished:
+                self._state[self.cursor_field] = record[self.cursor_field]
             yield record
 
 

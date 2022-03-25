@@ -19,7 +19,7 @@
         "source_defined_cursor": true
       },
       "sync_mode": "incremental",
-      "cursor_field": ["updated"],
+      "cursor_field": ["Updated"],
       "destination_sync_mode": "append"
     },
     {
