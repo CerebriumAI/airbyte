@@ -138,7 +138,10 @@ class Sale(DearBase, IncrementalMixin):
 
     def path(self, **kwargs) -> str:
 
-        updated = f"&UpdatedSince={self.state[self.cursor_field]}" if self.state[self.cursor_field] else ''
+        if self.state and self.state[self.cursor_field]:
+            updated = f"&UpdatedSince={self.state[self.cursor_field]}"
+        else:
+            updated = ''
 
         path = f"v2/saleList?Limit={ITEMS_PER_PAGE}{updated}"
         print('Sale Path: ', path)
