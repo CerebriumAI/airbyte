@@ -12,6 +12,26 @@
     },
     {
       "stream": {
+        "name": "product",
+        "json_schema": {},
+        "source_defined_primary_key": [["ID"]],
+        "supported_sync_modes": ["full_refresh"]
+      },
+      "sync_mode": "full_refresh",
+      "destination_sync_mode": "overwrite"
+    },
+    {
+      "stream": {
+        "name": "category",
+        "json_schema": {},
+        "source_defined_primary_key": [["ID"]],
+        "supported_sync_modes": ["full_refresh"]
+      },
+      "sync_mode": "full_refresh",
+      "destination_sync_mode": "overwrite"
+    },
+    {
+      "stream": {
         "name": "sale",
         "json_schema": {},
         "source_defined_primary_key": [["SaleID"]],

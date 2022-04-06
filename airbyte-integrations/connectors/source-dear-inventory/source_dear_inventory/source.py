@@ -14,6 +14,7 @@ from airbyte_cdk.sources.streams.http import HttpStream, HttpSubStream
 from airbyte_cdk.sources.streams.http.auth import NoAuth
 
 ITEMS_PER_PAGE = 1000
+INITIAL_STATE = None
 
 
 class DearBase(HttpStream):
@@ -74,7 +75,7 @@ class DearSubStream(HttpSubStream):
 
         # iterate over all parent stream_slices
         for stream_slice in parent_stream_slices:
-            parent_records = self.parent.read_records(sync_mode=SyncMode.incremental, stream_slice=stream_slice)
+            parent_records = self.parent.read_records(sync_mode=SyncMode.incremental, stream_slice=stream_slice, stream_state=stream_state)
 
             # iterate over all parent records with current stream_slice
             for record in parent_records:
@@ -91,6 +92,32 @@ class ProductAvailability(DearBase):
         json_response = response.json()
 
         for record in json_response.get("ProductAvailabilityList", []):
+            yield record
+
+
+class Product(DearBase):
+    primary_key = "ID"
+
+    def path(self, **kwargs) -> str:
+        return f"v2/product?Limit={ITEMS_PER_PAGE}"
+
+    def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
+        json_response = response.json()
+
+        for record in json_response.get("Products", []):
+            yield record
+
+
+class Category(DearBase):
+    primary_key = "ID"
+
+    def path(self, **kwargs) -> str:
+        return f"v2/ref/category?Limit={ITEMS_PER_PAGE}"
+
+    def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
+        json_response = response.json()
+
+        for record in json_response.get("CategoryList", []):
             yield record
 
 
@@ -136,10 +163,14 @@ class Sale(DearBase, IncrementalMixin):
     def state(self, value):
         self._state[self.cursor_field] = value[self.cursor_field]
 
+        global INITIAL_STATE
+        if INITIAL_STATE is None:
+            INITIAL_STATE = value[self.cursor_field]
+
     def path(self, **kwargs) -> str:
 
-        if self.state and self.state[self.cursor_field]:
-            updated = f"&UpdatedSince={self.state[self.cursor_field]}"
+        if INITIAL_STATE:
+            updated = f"&UpdatedSince={INITIAL_STATE}"
         else:
             updated = ''
 
@@ -201,6 +232,8 @@ class SourceDearInventory(AbstractSource):
         return [
             Location(config=config, auth=auth),
             ProductAvailability(config=config, auth=auth),
+            Product(config=config, auth=auth),
+            Category(config=config, auth=auth),
             Customer(config=config, auth=auth),
             sale,
             SaleInvoice(sale, config=config, auth=auth)

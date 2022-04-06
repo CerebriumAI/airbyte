@@ -1,0 +1,162 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "ID": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "SKU": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Category": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Brand": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "CostingMethod": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DropShipMode": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DefaultLocation": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Length": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Width": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Height": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Weight": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "UOM": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "WeightUnits": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "DimensionsUnits": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "Barcode": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "MinimumBeforeReorder": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "Description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "InternalNote": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "ShortDescription": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "AverageCost": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "ReorderQuantity": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PriceTier1": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PriceTier2": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "PriceTier3": {
+      "type": [
+        "null",
+        "number"
+      ]
+    }
+  }
+}
