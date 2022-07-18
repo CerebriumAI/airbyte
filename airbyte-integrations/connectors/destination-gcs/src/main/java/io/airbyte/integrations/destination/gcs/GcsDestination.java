@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.gcs;
@@ -46,10 +46,10 @@ public class GcsDestination extends BaseConnector implements Destination {
       final AmazonS3 s3Client = destinationConfig.getS3Client();
 
       // Test single upload (for small files) permissions
-      S3Destination.testSingleUpload(s3Client, destinationConfig.getBucketName());
+      S3Destination.testSingleUpload(s3Client, destinationConfig.getBucketName(), destinationConfig.getBucketPath());
 
       // Test multipart upload with stream transfer manager
-      S3Destination.testMultipartUpload(s3Client, destinationConfig.getBucketName());
+      S3Destination.testMultipartUpload(s3Client, destinationConfig.getBucketName(), destinationConfig.getBucketPath());
 
       return new AirbyteConnectionStatus().withStatus(Status.SUCCEEDED);
     } catch (final Exception e) {

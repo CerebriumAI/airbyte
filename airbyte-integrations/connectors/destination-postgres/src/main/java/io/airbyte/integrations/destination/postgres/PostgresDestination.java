@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.postgres;
@@ -7,6 +7,8 @@ package io.airbyte.integrations.destination.postgres;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import io.airbyte.commons.json.Jsons;
+import io.airbyte.db.factory.DatabaseDriver;
+import io.airbyte.db.jdbc.JdbcUtils;
 import io.airbyte.integrations.base.Destination;
 import io.airbyte.integrations.base.IntegrationRunner;
 import io.airbyte.integrations.base.ssh.SshWrappedDestination;
@@ -22,9 +24,14 @@ public class PostgresDestination extends AbstractJdbcDestination implements Dest
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PostgresDestination.class);
 
-  public static final String DRIVER_CLASS = "org.postgresql.Driver";
+  public static final String DRIVER_CLASS = DatabaseDriver.POSTGRESQL.getDriverClassName();
   public static final List<String> HOST_KEY = List.of("host");
   public static final List<String> PORT_KEY = List.of("port");
+  public static final String DATABASE_KEY = "database";
+  public static final String JDBC_URL_KEY = "jdbc_url";
+  public static final String PASSWORD_KEY = "password";
+  public static final String USERNAME_KEY = "username";
+  public static final String SCHEMA_KEY = "schema";
 
   static final Map<String, String> SSL_JDBC_PARAMETERS = ImmutableMap.of(
       "ssl", "true",
@@ -40,7 +47,7 @@ public class PostgresDestination extends AbstractJdbcDestination implements Dest
 
   @Override
   protected Map<String, String> getDefaultConnectionProperties(final JsonNode config) {
-    if (useSsl(config)) {
+    if (JdbcUtils.useSsl(config)) {
       return SSL_JDBC_PARAMETERS;
     } else {
       // No need for any parameters if the connection doesn't use SSL
@@ -55,22 +62,24 @@ public class PostgresDestination extends AbstractJdbcDestination implements Dest
     final String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s?",
         config.get("host").asText(),
         config.get("port").asText(),
-        config.get("database").asText());
+        config.get(DATABASE_KEY).asText());
 
     final ImmutableMap.Builder<Object, Object> configBuilder = ImmutableMap.builder()
-        .put("username", config.get("username").asText())
-        .put("jdbc_url", jdbcUrl)
-        .put("schema", schema);
+        .put(USERNAME_KEY, config.get(USERNAME_KEY).asText())
+        .put(JDBC_URL_KEY, jdbcUrl)
+        .put(SCHEMA_KEY, schema);
 
-    if (config.has("password")) {
-      configBuilder.put("password", config.get("password").asText());
+    if (config.has(PASSWORD_KEY)) {
+      configBuilder.put(PASSWORD_KEY, config.get(PASSWORD_KEY).asText());
     }
+
+    if (config.has(JdbcUtils.JDBC_URL_PARAMS_KEY)) {
+      configBuilder.put(JdbcUtils.JDBC_URL_PARAMS_KEY, config.get(JdbcUtils.JDBC_URL_PARAMS_KEY).asText());
+    }
+
     return Jsons.jsonNode(configBuilder.build());
   }
 
-  private boolean useSsl(final JsonNode config) {
-    return !config.has("ssl") || config.get("ssl").asBoolean();
-  }
 
   public static void main(final String[] args) throws Exception {
     final Destination destination = PostgresDestination.sshWrappedDestination();

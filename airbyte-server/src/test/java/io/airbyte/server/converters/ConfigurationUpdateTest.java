@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.server.converters;
@@ -33,7 +33,6 @@ class ConfigurationUpdateTest {
 
   private static final String IMAGE_REPOSITORY = "foo";
   private static final String IMAGE_TAG = "bar";
-  private static final String IMAGE_NAME = IMAGE_REPOSITORY + ":" + IMAGE_TAG;
   private static final UUID UUID1 = UUID.randomUUID();
   private static final UUID UUID2 = UUID.randomUUID();
   private static final JsonNode SPEC = CatalogHelpers.fieldsToJsonSchema(

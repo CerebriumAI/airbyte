@@ -1,12 +1,13 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.jdbc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.airbyte.commons.map.MoreMaps;
-import io.airbyte.db.Databases;
+import io.airbyte.db.factory.DataSourceFactory;
+import io.airbyte.db.jdbc.DefaultJdbcDatabase;
 import io.airbyte.db.jdbc.JdbcDatabase;
 import io.airbyte.db.jdbc.JdbcUtils;
 import io.airbyte.integrations.BaseConnector;
@@ -22,14 +23,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class AbstractJdbcDestination extends BaseConnector implements Destination {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractJdbcDestination.class);
-
-  public static final String JDBC_URL_PARAMS_KEY = "jdbc_url_params";
 
   private final String driverClass;
   private final NamingConventionTransformer namingResolver;
@@ -53,8 +53,10 @@ public abstract class AbstractJdbcDestination extends BaseConnector implements D
 
   @Override
   public AirbyteConnectionStatus check(final JsonNode config) {
+    final DataSource dataSource = getDataSource(config);
 
-    try (final JdbcDatabase database = getDatabase(config)) {
+    try {
+      final JdbcDatabase database = getDatabase(dataSource);
       final String outputSchema = namingResolver.getIdentifier(config.get("schema").asText());
       AirbyteSentry.executeWithTracing("CreateAndDropTable",
           () -> attemptSQLCreateAndDropTableOperations(outputSchema, database, namingResolver, sqlOperations));
@@ -64,6 +66,12 @@ public abstract class AbstractJdbcDestination extends BaseConnector implements D
       return new AirbyteConnectionStatus()
           .withStatus(Status.FAILED)
           .withMessage("Could not connect with provided configuration. \n" + e.getMessage());
+    } finally {
+      try {
+        DataSourceFactory.close(dataSource);
+      } catch (final Exception e) {
+        LOGGER.warn("Unable to close data source.", e);
+      }
     }
   }
 
@@ -72,9 +80,6 @@ public abstract class AbstractJdbcDestination extends BaseConnector implements D
                                                             final NamingConventionTransformer namingResolver,
                                                             final SqlOperations sqlOps)
       throws Exception {
-    // attempt to get metadata from the database as a cheap way of seeing if we can connect.
-    database.bufferedResultSetQuery(conn -> conn.getMetaData().getCatalogs(), JdbcUtils.getDefaultSourceOperations()::rowToJson);
-
     // verify we have write permissions on the target schema by creating a table with a random name,
     // then dropping that table
     final String outputTableName = namingResolver.getIdentifier("_airbyte_connection_test_" + UUID.randomUUID().toString().replaceAll("-", ""));
@@ -83,19 +88,22 @@ public abstract class AbstractJdbcDestination extends BaseConnector implements D
     sqlOps.dropTableIfExists(database, outputSchema, outputTableName);
   }
 
-  protected JdbcDatabase getDatabase(final JsonNode config) {
+  protected DataSource getDataSource(final JsonNode config) {
     final JsonNode jdbcConfig = toJdbcConfig(config);
-
-    return Databases.createJdbcDatabase(
+    return DataSourceFactory.create(
         jdbcConfig.get("username").asText(),
         jdbcConfig.has("password") ? jdbcConfig.get("password").asText() : null,
-        jdbcConfig.get("jdbc_url").asText(),
         driverClass,
+        jdbcConfig.get("jdbc_url").asText(),
         getConnectionProperties(config));
   }
 
+  protected JdbcDatabase getDatabase(final DataSource dataSource) {
+    return new DefaultJdbcDatabase(dataSource);
+  }
+
   protected Map<String, String> getConnectionProperties(final JsonNode config) {
-    final Map<String, String> customProperties = JdbcUtils.parseJdbcParameters(config, JDBC_URL_PARAMS_KEY);
+    final Map<String, String> customProperties = JdbcUtils.parseJdbcParameters(config, JdbcUtils.JDBC_URL_PARAMS_KEY);
     final Map<String, String> defaultProperties = getDefaultConnectionProperties(config);
     assertCustomParametersDontOverwriteDefaultParameters(customProperties, defaultProperties);
     return MoreMaps.merge(customProperties, defaultProperties);
@@ -118,7 +126,8 @@ public abstract class AbstractJdbcDestination extends BaseConnector implements D
   public AirbyteMessageConsumer getConsumer(final JsonNode config,
                                             final ConfiguredAirbyteCatalog catalog,
                                             final Consumer<AirbyteMessage> outputRecordCollector) {
-    return JdbcBufferedConsumerFactory.create(outputRecordCollector, getDatabase(config), sqlOperations, namingResolver, config, catalog);
+    return JdbcBufferedConsumerFactory.create(outputRecordCollector, getDatabase(getDataSource(config)), sqlOperations, namingResolver, config,
+        catalog);
   }
 
 }

@@ -10,7 +10,9 @@ This Source is capable of syncing the following core Streams:
 
 * [Users](https://developer.okta.com/docs/reference/api/users/#list-users)
 * [Groups](https://developer.okta.com/docs/reference/api/groups/#list-groups)
+* [Group Members](https://developer.okta.com/docs/reference/api/groups/#list-group-members)
 * [System Log](https://developer.okta.com/docs/reference/api/system-log/#get-started)
+* [Custom Roles](https://developer.okta.com/docs/reference/api/roles/#list-roles)
 
 ### Data type mapping
 
@@ -43,9 +45,11 @@ The connector is restricted by normal Okta [requests limitation](https://develop
 
 In order to pull data out of your Okta instance, you need to create an [API Token](https://developer.okta.com/docs/guides/create-an-api-token/overview/).
 
-{% hint style="info" %}
+:::info
+
 Different Okta APIs require different admin privilege levels. API tokens inherit the privilege level of the admin account used to create them
-{% endhint %}
+
+:::
 
 1. Sign in to your Okta organization as a user with [administrator privileges](https://help.okta.com/en/prod/okta_help_CSH.htm#ext_Security_Administrators)
 2. Access the API page: In the Admin Console, select API from the Security menu and then select the Tokens tab.
@@ -59,6 +63,8 @@ Different Okta APIs require different admin privilege levels. API tokens inherit
 
 | Version | Date | Pull Request | Subject |
 | :--- | :--- | :--- | :--- |
+| 0.1.6 | 2022-07-11 | [14610](https://github.com/airbytehq/airbyte/pull/14610) | add custom roles stream |
+| 0.1.5 | 2022-07-04 | [14380](https://github.com/airbytehq/airbyte/pull/14380) | add Group_Members stream to okta source |
 | 0.1.4 | 2021-11-02 | [7584](https://github.com/airbytehq/airbyte/pull/7584) | Fix incremental params for log stream |
 | 0.1.3 | 2021-09-08 | [5905](https://github.com/airbytehq/airbyte/pull/5905) | Fix incremental stream defect |
 | 0.1.2 | 2021-07-01 | [4456](https://github.com/airbytehq/airbyte/pull/4456) | Bugfix infinite pagination in logs stream |

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.source.jdbc;
@@ -23,14 +23,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.airbyte.commons.functional.CheckedConsumer;
 import io.airbyte.commons.json.Jsons;
+import io.airbyte.commons.map.MoreMaps;
 import io.airbyte.commons.util.AutoCloseableIterator;
 import io.airbyte.commons.util.AutoCloseableIterators;
-import io.airbyte.db.Databases;
 import io.airbyte.db.JdbcCompatibleSourceOperations;
 import io.airbyte.db.SqlDatabase;
+import io.airbyte.db.factory.DataSourceFactory;
 import io.airbyte.db.jdbc.JdbcDatabase;
-import io.airbyte.db.jdbc.JdbcStreamingQueryConfiguration;
 import io.airbyte.db.jdbc.JdbcUtils;
+import io.airbyte.db.jdbc.StreamingJdbcDatabase;
+import io.airbyte.db.jdbc.streaming.JdbcStreamingQueryConfig;
 import io.airbyte.integrations.base.Source;
 import io.airbyte.integrations.source.jdbc.dto.JdbcPrivilegeDto;
 import io.airbyte.integrations.source.relationaldb.AbstractRelationalDbSource;
@@ -42,15 +44,19 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.sql.DataSource;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,16 +71,17 @@ public abstract class AbstractJdbcSource<Datatype> extends AbstractRelationalDbS
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractJdbcSource.class);
 
   protected final String driverClass;
-  protected final JdbcStreamingQueryConfiguration jdbcStreamingQueryConfiguration;
+  protected final Supplier<JdbcStreamingQueryConfig> streamingQueryConfigProvider;
   protected final JdbcCompatibleSourceOperations<Datatype> sourceOperations;
 
   protected String quoteString;
+  protected Collection<DataSource> dataSources = new ArrayList<>();
 
   public AbstractJdbcSource(final String driverClass,
-                            final JdbcStreamingQueryConfiguration jdbcStreamingQueryConfiguration,
+                            final Supplier<JdbcStreamingQueryConfig> streamingQueryConfigProvider,
                             final JdbcCompatibleSourceOperations<Datatype> sourceOperations) {
     this.driverClass = driverClass;
-    this.jdbcStreamingQueryConfiguration = jdbcStreamingQueryConfiguration;
+    this.streamingQueryConfigProvider = streamingQueryConfigProvider;
     this.sourceOperations = sourceOperations;
   }
 
@@ -113,6 +120,7 @@ public abstract class AbstractJdbcSource<Datatype> extends AbstractRelationalDbS
   @Override
   protected List<TableInfo<CommonField<Datatype>>> discoverInternal(final JdbcDatabase database, final String schema) throws Exception {
     final Set<String> internalSchemas = new HashSet<>(getExcludedInternalNameSpaces());
+    LOGGER.info("Internal schemas to exclude: {}", internalSchemas);
     final Set<JdbcPrivilegeDto> tablesWithSelectGrantPrivilege = getPrivilegesTableForCurrentUser(database, schema);
     return database.bufferedResultSetQuery(
         // retrieve column metadata from the database
@@ -134,7 +142,7 @@ public abstract class AbstractJdbcSource<Datatype> extends AbstractRelationalDbS
                 .map(f -> {
                   final Datatype datatype = getFieldType(f);
                   final JsonSchemaType jsonType = getType(datatype);
-                  LOGGER.info("Table {} column {} (type {}[{}]) -> Json type {}",
+                  LOGGER.info("Table {} column {} (type {}[{}]) -> {}",
                       fields.get(0).get(INTERNAL_TABLE_NAME).asText(),
                       f.get(INTERNAL_COLUMN_NAME).asText(),
                       f.get(INTERNAL_COLUMN_TYPE_NAME).asText(),
@@ -284,22 +292,88 @@ public abstract class AbstractJdbcSource<Datatype> extends AbstractRelationalDbS
     });
   }
 
+  protected DataSource createDataSource(final JsonNode config) {
+    final JsonNode jdbcConfig = toDatabaseConfig(config);
+    final DataSource dataSource = DataSourceFactory.create(
+        jdbcConfig.has("username") ? jdbcConfig.get("username").asText() : null,
+        jdbcConfig.has("password") ? jdbcConfig.get("password").asText() : null,
+        driverClass,
+        jdbcConfig.get("jdbc_url").asText(),
+        getConnectionProperties(config));
+    // Record the data source so that it can be closed.
+    dataSources.add(dataSource);
+    return dataSource;
+  }
+
   @Override
   public JdbcDatabase createDatabase(final JsonNode config) throws SQLException {
-    final JsonNode jdbcConfig = toDatabaseConfig(config);
-
-    final JdbcDatabase database = Databases.createStreamingJdbcDatabase(
-        jdbcConfig.get("username").asText(),
-        jdbcConfig.has("password") ? jdbcConfig.get("password").asText() : null,
-        jdbcConfig.get("jdbc_url").asText(),
-        driverClass,
-        jdbcStreamingQueryConfiguration,
-        JdbcUtils.parseJdbcParameters(jdbcConfig, "connection_properties"),
-        sourceOperations);
+    final DataSource dataSource = createDataSource(config);
+    final JdbcDatabase database = new StreamingJdbcDatabase(
+        dataSource,
+        sourceOperations,
+        streamingQueryConfigProvider);
 
     quoteString = (quoteString == null ? database.getMetaData().getIdentifierQuoteString() : quoteString);
 
     return database;
+  }
+
+  /**
+   * Retrieves connection_properties from config and also validates if custom
+   * jdbc_url parameters overlap with the default properties
+   *
+   * @param config A configuration used to check Jdbc connection
+   * @return A mapping of connection properties
+   */
+  protected Map<String, String> getConnectionProperties(final JsonNode config) {
+    final Map<String, String> customProperties = JdbcUtils.parseJdbcParameters(config, JdbcUtils.JDBC_URL_PARAMS_KEY);
+    final Map<String, String> defaultProperties = getDefaultConnectionProperties(config);
+    assertCustomParametersDontOverwriteDefaultParameters(customProperties, defaultProperties);
+    return MoreMaps.merge(customProperties, defaultProperties);
+  }
+
+  /**
+   * Validates for duplication parameters
+   *
+   * @param customParameters custom connection properties map as specified by each Jdbc source
+   * @param defaultParameters connection properties map as specified by each Jdbc source
+   * @throws IllegalArgumentException
+   */
+  private void assertCustomParametersDontOverwriteDefaultParameters(final Map<String, String> customParameters,
+      final Map<String, String> defaultParameters) {
+    for (final String key : defaultParameters.keySet()) {
+      if (customParameters.containsKey(key) && !Objects.equals(customParameters.get(key), defaultParameters.get(key))) {
+        throw new IllegalArgumentException("Cannot overwrite default JDBC parameter " + key);
+      }
+    }
+  }
+
+  /**
+   * Retrieves default connection_properties from config
+   *
+   * TODO: make this method abstract and add parity features to
+   * destination connectors
+   * @param config A configuration used to check Jdbc connection
+   * @return A mapping of the default connection properties
+   */
+  protected Map<String, String> getDefaultConnectionProperties(final JsonNode config) {
+    return JdbcUtils.parseJdbcParameters(config, "connection_properties", getJdbcParameterDelimiter());
+  };
+
+  protected String getJdbcParameterDelimiter() {
+    return "&";
+  }
+
+  @Override
+  public void close() {
+    dataSources.forEach(d -> {
+      try {
+        DataSourceFactory.close(d);
+      } catch (final Exception e) {
+        LOGGER.warn("Unable to close data source.", e);
+      }
+    });
+    dataSources.clear();
   }
 
 }

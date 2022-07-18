@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.s3;
@@ -17,7 +17,7 @@ import io.airbyte.integrations.base.IntegrationRunner;
 import io.airbyte.integrations.destination.NamingConventionTransformer;
 import io.airbyte.integrations.destination.record_buffer.FileBuffer;
 import io.airbyte.integrations.destination.s3.util.S3NameTransformer;
-import io.airbyte.integrations.destination.s3.util.StreamTransferManagerHelper;
+import io.airbyte.integrations.destination.s3.util.StreamTransferManagerFactory;
 import io.airbyte.protocol.models.AirbyteConnectionStatus;
 import io.airbyte.protocol.models.AirbyteConnectionStatus.Status;
 import io.airbyte.protocol.models.AirbyteMessage;
@@ -62,10 +62,10 @@ public class S3Destination extends BaseConnector implements Destination {
       S3Destination.attemptS3WriteAndDelete(storageOperations, destinationConfig, destinationConfig.getBucketName());
 
       // Test single upload (for small files) permissions
-      testSingleUpload(s3Client, destinationConfig.getBucketName());
+      testSingleUpload(s3Client, destinationConfig.getBucketName(), destinationConfig.getBucketPath());
 
       // Test multipart upload with stream transfer manager
-      testMultipartUpload(s3Client, destinationConfig.getBucketName());
+      testMultipartUpload(s3Client, destinationConfig.getBucketName(), destinationConfig.getBucketPath());
 
       return new AirbyteConnectionStatus().withStatus(Status.SUCCEEDED);
     } catch (final Exception e) {
@@ -77,9 +77,12 @@ public class S3Destination extends BaseConnector implements Destination {
     }
   }
 
-  public static void testSingleUpload(final AmazonS3 s3Client, final String bucketName) {
+  public static void testSingleUpload(final AmazonS3 s3Client, final String bucketName, final String bucketPath) {
     LOGGER.info("Started testing if all required credentials assigned to user for single file uploading");
-    final String testFile = "test_" + System.currentTimeMillis();
+    if (bucketPath.endsWith("/")) {
+      throw new RuntimeException("Bucket Path should not end with /");
+    }
+    final String testFile = bucketPath + "/" + "test_" + System.currentTimeMillis();
     try {
       s3Client.putObject(bucketName, testFile, "this is a test file");
     } finally {
@@ -88,15 +91,13 @@ public class S3Destination extends BaseConnector implements Destination {
     LOGGER.info("Finished checking for normal upload mode");
   }
 
-  public static void testMultipartUpload(final AmazonS3 s3Client, final String bucketName) throws IOException {
+  public static void testMultipartUpload(final AmazonS3 s3Client, final String bucketName, final String bucketPath) throws IOException {
     LOGGER.info("Started testing if all required credentials assigned to user for multipart upload");
-
-    final String testFile = "test_" + System.currentTimeMillis();
-    final StreamTransferManager manager = StreamTransferManagerHelper.getDefault(
-        bucketName,
-        testFile,
-        s3Client,
-        (long) StreamTransferManagerHelper.DEFAULT_PART_SIZE_MB);
+    if (bucketPath.endsWith("/")) {
+      throw new RuntimeException("Bucket Path should not end with /");
+    }
+    final String testFile = bucketPath + "/" + "test_" + System.currentTimeMillis();
+    final StreamTransferManager manager = StreamTransferManagerFactory.create(bucketName, testFile, s3Client).get();
     boolean success = false;
     try (final MultiPartOutputStream outputStream = manager.getMultiPartOutputStreams().get(0);
         final CSVPrinter csvPrinter = new CSVPrinter(new PrintWriter(outputStream, true, StandardCharsets.UTF_8), CSVFormat.DEFAULT)) {

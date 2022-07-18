@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.workers.process;
@@ -27,8 +27,6 @@ import org.testcontainers.shaded.com.google.common.io.Resources;
 public class KubePodProcessTest {
 
   private static final KubernetesClient K8s = new DefaultKubernetesClient();
-
-  private static final String ENTRYPOINT = "sh";
 
   private static final String TEST_IMAGE_WITH_VAR_PATH = "Dockerfile.with_var";
   private static final String TEST_IMAGE_WITH_VAR_NAME = "worker-test:with-var";
