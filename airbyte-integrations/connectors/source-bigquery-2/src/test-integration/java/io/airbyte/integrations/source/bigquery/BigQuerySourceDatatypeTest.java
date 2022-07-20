@@ -38,7 +38,7 @@ public class BigQuerySourceDatatypeTest extends AbstractSourceDatabaseTypeTest {
 
   @Override
   protected String getImageName() {
-    return "airbyte/source-bigquery:dev";
+    return "airbyte/source-bigquery-2:dev";
   }
 
   @Override
