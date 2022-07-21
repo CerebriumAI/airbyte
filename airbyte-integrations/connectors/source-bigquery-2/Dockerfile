@@ -17,5 +17,5 @@ ENV APPLICATION source-bigquery-2
 COPY --from=build /airbyte /airbyte
 
 # Airbyte's build system uses these labels to know what to name and tag the docker images produced by this Dockerfile.
-LABEL io.airbyte.version=0.1.8
-LABEL io.airbyte.name=airbyte/source-bigquery-2
+LABEL io.airbyte.version=0.1.0
+LABEL io.airbyte.name=jonoirwinrsa/source-bigquery-2

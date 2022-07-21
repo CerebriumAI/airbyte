@@ -140,6 +140,11 @@ public class BigQuerySource extends AbstractRelationalDbSource<StandardSQLTypeNa
                                                                final String cursorField,
                                                                final StandardSQLTypeName cursorFieldType,
                                                                final String cursor) {
+
+    if (CUSTOM_SQL) {
+      return queryTableWithParams(database, CUSTOM_SQL, sourceOperations.getQueryParameter(cursorFieldType, cursor))
+    }
+
     return queryTableWithParams(database, String.format("SELECT %s FROM %s WHERE %s > ?",
         enquoteIdentifierList(columnNames),
         getFullTableName(schemaName, tableName),
