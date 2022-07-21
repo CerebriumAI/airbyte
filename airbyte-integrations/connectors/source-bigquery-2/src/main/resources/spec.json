@@ -36,7 +36,7 @@
       },
       "custom_sql": {
         "type": "string",
-        "description": "The SQL statement to run when fetching data",
+        "description": "The SQL statement to run when fetching data. Note this cannot be used with incremental sync at the moment.",
         "title": "Custom SQL"
       }
     }

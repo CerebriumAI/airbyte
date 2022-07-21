@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 public class BigQuerySource extends AbstractRelationalDbSource<StandardSQLTypeName, BigQueryDatabase> implements Source {
 
@@ -44,6 +45,7 @@ public class BigQuerySource extends AbstractRelationalDbSource<StandardSQLTypeNa
   public static final String CUSTOM_SQL = "custom_sql";
 
   private JsonNode dbConfig;
+  private String customSQL;
   private final BigQuerySourceOperations sourceOperations = new BigQuerySourceOperations();
 
   @Override
@@ -60,6 +62,7 @@ public class BigQuerySource extends AbstractRelationalDbSource<StandardSQLTypeNa
   @Override
   protected BigQueryDatabase createDatabase(final JsonNode config) {
     dbConfig = Jsons.clone(config);
+    customSQL = config.get(CUSTOM_SQL).asText();
     return new BigQueryDatabase(config.get(CONFIG_PROJECT_ID).asText(), config.get(CONFIG_CREDS).asText());
   }
 
@@ -69,8 +72,9 @@ public class BigQuerySource extends AbstractRelationalDbSource<StandardSQLTypeNa
     checkList.add(database -> {
       if (database.query("select 1").count() < 1)
         throw new Exception("Unable to execute any query on the source!");
-      else
+      else {
         LOGGER.info("The source passed the basic query test!");
+      }
     });
 
     checkList.add(database -> {
@@ -140,16 +144,32 @@ public class BigQuerySource extends AbstractRelationalDbSource<StandardSQLTypeNa
                                                                final String cursorField,
                                                                final StandardSQLTypeName cursorFieldType,
                                                                final String cursor) {
-
-    if (CUSTOM_SQL) {
-      return queryTableWithParams(database, CUSTOM_SQL, sourceOperations.getQueryParameter(cursorFieldType, cursor))
+    if (StringUtils.isNotBlank(customSQL)) {
+      LOGGER.info("Custom SQL being used");
+      return queryTableWithParams(database, customSQL, sourceOperations.getQueryParameter(cursorFieldType, cursor));
     }
 
     return queryTableWithParams(database, String.format("SELECT %s FROM %s WHERE %s > ?",
-        enquoteIdentifierList(columnNames),
-        getFullTableName(schemaName, tableName),
-        cursorField),
-        sourceOperations.getQueryParameter(cursorFieldType, cursor));
+       enquoteIdentifierList(columnNames),
+       getFullTableName(schemaName, tableName),
+       cursorField),
+       sourceOperations.getQueryParameter(cursorFieldType, cursor));
+  }
+
+  @Override
+  public AutoCloseableIterator<JsonNode> queryTableFullRefresh(final BigQueryDatabase database,
+                                                               final List<String> columnNames,
+                                                               final String schemaName,
+                                                               final String tableName) {
+    LOGGER.info("Queueing query for table: {}", tableName);
+    if (StringUtils.isNotBlank(customSQL)) {
+        LOGGER.info("Custom SQL being used");
+        return queryTable(database, customSQL);
+    }
+
+    return queryTable(database, String.format("SELECT %s FROM %s",
+              enquoteIdentifierList(columnNames),
+              getFullTableName(schemaName, tableName)));
   }
 
   private AutoCloseableIterator<JsonNode> queryTableWithParams(final BigQueryDatabase database,
