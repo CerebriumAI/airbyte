@@ -2,7 +2,7 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.mysql.helpers;
+package io.airbyte.integrations.source.mysqlcustomsql.helpers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.airbyte.commons.functional.CheckedConsumer;

@@ -2,10 +2,10 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.mysql;
+package io.airbyte.integrations.source.mysqlcustomsql;
 
-import static io.airbyte.integrations.source.mysql.MySqlSource.CDC_LOG_FILE;
-import static io.airbyte.integrations.source.mysql.MySqlSource.CDC_LOG_POS;
+import static io.airbyte.integrations.source.mysqlcustomsql.MySqlSource.CDC_LOG_FILE;
+import static io.airbyte.integrations.source.mysqlcustomsql.MySqlSource.CDC_LOG_POS;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

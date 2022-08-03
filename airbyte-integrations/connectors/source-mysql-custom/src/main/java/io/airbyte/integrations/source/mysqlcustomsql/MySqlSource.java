@@ -2,12 +2,12 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.mysql;
+package io.airbyte.integrations.source.mysqlcustomsql;
 
 import static io.airbyte.integrations.debezium.AirbyteDebeziumHandler.shouldUseCDC;
 import static io.airbyte.integrations.debezium.internals.DebeziumEventUtils.CDC_DELETED_AT;
 import static io.airbyte.integrations.debezium.internals.DebeziumEventUtils.CDC_UPDATED_AT;
-import static io.airbyte.integrations.source.mysql.helpers.CdcConfigurationHelper.checkBinlog;
+import static io.airbyte.integrations.source.mysqlcustomsql.helpers.CdcConfigurationHelper.checkBinlog;
 import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,8 +24,8 @@ import io.airbyte.integrations.base.IntegrationRunner;
 import io.airbyte.integrations.base.Source;
 import io.airbyte.integrations.base.ssh.SshWrappedSource;
 import io.airbyte.integrations.debezium.AirbyteDebeziumHandler;
+import io.airbyte.integrations.source.mysqlcustomsql.helpers.CdcConfigurationHelper;
 import io.airbyte.integrations.source.jdbc.AbstractJdbcSource;
-import io.airbyte.integrations.source.mysql.helpers.CdcConfigurationHelper;
 import io.airbyte.integrations.source.relationaldb.TableInfo;
 import io.airbyte.integrations.source.relationaldb.models.CdcState;
 import io.airbyte.integrations.source.relationaldb.state.StateManager;
@@ -57,6 +57,8 @@ public class MySqlSource extends AbstractJdbcSource<MysqlType> implements Source
       "useSSL=true",
       "requireSSL=true",
       "verifyServerCertificate=false");
+
+  public static final String CUSTOM_SQL = "custom_sql";
 
   public static Source sshWrappedSource() {
     return new SshWrappedSource(new MySqlSource(), List.of("host"), List.of("port"));
@@ -202,6 +204,8 @@ public class MySqlSource extends AbstractJdbcSource<MysqlType> implements Source
 
   public static void main(final String[] args) throws Exception {
     final Source source = MySqlSource.sshWrappedSource();
+    LOGGER.info("JONO");
+    LOGGER.info("v1.0");
     LOGGER.info("starting source: {}", MySqlSource.class);
     new IntegrationRunner(source).run(args);
     LOGGER.info("completed source: {}", MySqlSource.class);

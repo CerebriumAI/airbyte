@@ -2,9 +2,9 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.mysql;
+package io.airbyte.integrations.source.mysqlcustomsql;
 
-import static io.airbyte.integrations.source.mysql.MySqlSource.SSL_PARAMETERS;
+import static io.airbyte.integrations.source.mysqlcustomsql.MySqlSource.SSL_PARAMETERS;
 
 import com.google.common.collect.ImmutableMap;
 import io.airbyte.commons.json.Jsons;
