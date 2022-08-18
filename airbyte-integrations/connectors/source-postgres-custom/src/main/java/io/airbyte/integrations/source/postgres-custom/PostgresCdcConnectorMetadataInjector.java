@@ -2,7 +2,7 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.postgres;
+package io.airbyte.integrations.source.postgrescustomsql;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;

@@ -2,7 +2,7 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.postgres;
+package io.airbyte.integrations.source.postgrescustomsql;
 
 import static io.airbyte.integrations.debezium.AirbyteDebeziumHandler.shouldUseCDC;
 import static io.airbyte.integrations.util.PostgresSslConnectionUtils.DISABLE;

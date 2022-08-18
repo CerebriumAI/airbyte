@@ -2,7 +2,7 @@
  * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
  */
 
-package io.airbyte.integrations.source.postgres;
+package io.airbyte.integrations.source.postgrescustomsql;
 
 import static io.airbyte.db.DataTypeUtils.TIMESTAMP_FORMATTER;
 import static io.airbyte.db.DataTypeUtils.TIME_FORMATTER;
