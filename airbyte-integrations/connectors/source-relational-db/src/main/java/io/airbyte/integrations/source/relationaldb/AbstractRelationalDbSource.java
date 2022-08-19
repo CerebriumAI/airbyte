@@ -14,6 +14,7 @@ import java.util.StringJoiner;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This class contains helper functions and boilerplate for implementing a source connector for a
@@ -37,6 +38,14 @@ public abstract class AbstractRelationalDbSource<DataType, Database extends SqlD
         enquoteIdentifierList(columnNames),
         getFullTableName(schemaName, tableName)));
   }
+
+  @Override
+  public AutoCloseableIterator<JsonNode> queryTableCustomSQL(final Database database,
+                                                             final String customSQL) {
+      LOGGER.info("Custom SQL being used");
+      LOGGER.info("Custom SQL: {}", customSQL);
+      return queryTable(database, customSQL);
+    }
 
   protected String getIdentifierWithQuoting(final String identifier) {
     return getQuoteString() + identifier + getQuoteString();

@@ -444,6 +444,8 @@ public class PostgresSource extends AbstractJdbcSource<JDBCType> implements Sour
   }
 
   public static void main(final String[] args) throws Exception {
+    LOGGER.info("JONO v1.1");
+
     final Source source = PostgresSource.sshWrappedSource();
     LOGGER.info("starting source: {}", PostgresSource.class);
     new IntegrationRunner(source).run(args);

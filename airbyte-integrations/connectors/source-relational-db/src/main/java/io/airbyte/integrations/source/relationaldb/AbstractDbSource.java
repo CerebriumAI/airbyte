@@ -491,6 +491,16 @@ public abstract class AbstractDbSource<DataType, Database extends AbstractDataba
                                                                         final String tableName);
 
   /**
+   * Make a specific SQL query
+   *
+   * @param database source database
+   * @param customSQL sql statement to run
+   * @return iterator with read data
+   */
+  public abstract AutoCloseableIterator<JsonNode> queryTableCustomSQL(final Database database,
+                                                                        final String customSQL);
+
+  /**
    * Read incremental data from a table. Incremental read should return only records where cursor
    * column value is bigger than cursor. Note that if the connector needs to emit intermediate state
    * (i.e. {@link AbstractDbSource#getStateEmissionFrequency} > 0), the incremental query must be
